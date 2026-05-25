@@ -128,6 +128,16 @@ When you're ready to set up your app in production, you can follow [our deployme
 
 When you reach the step for [setting up environment variables](https://shopify.dev/docs/apps/deployment/web#set-env-vars), you also need to set the variable `NODE_ENV=production`.
 
+For Vercel deployments, set:
+
+- `SHOPIFY_APP_URL=https://<your-vercel-domain>`
+- `SHOPIFY_API_KEY`
+- `SHOPIFY_API_SECRET`
+- `SCOPES`
+- `DATABASE_URL`
+
+Vercel also exposes `VERCEL_URL` automatically, and the app now falls back to it if `SHOPIFY_APP_URL` is not provided.
+
 ## Gotchas / Troubleshooting
 
 ### Database tables don't exist
