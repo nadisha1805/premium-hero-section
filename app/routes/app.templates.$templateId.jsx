@@ -4,65 +4,17 @@ import prisma from "../db.server";
 import { TEMPLATES } from "../data/templates";
 import "../styles/premium-templates.css";
 
-export const loader = async ({ request, params }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
+export const loader = async ({ params }) => {
   const { templateId } = params;
 
   const template = TEMPLATES.find(t => t.id === templateId);
   if (!template) {
     throw new Response("Template Not Found", { status: 404 });
   }
-  /*
-    let subscription = await prisma.shopSubscription.findUnique({
-      where: { shop }
-    });
-  
-    if (!subscription) {
-      subscription = await prisma.shopSubscription.create({
-        data: { shop, plan: "FREE" }
-      });
-    }
-  */
-  return { plan: "PREMIUM", template, shop };
+  return { plan: "PREMIUM", template, shop: "demo.myshopify.com" };
 };
 
-export const action = async ({ request, params }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
-  const { templateId } = params;
-
-  const template = TEMPLATES.find(t => t.id === templateId);
-  if (!template) {
-    return { success: false, error: "Template not found" };
-  }
-
-  const formData = await request.formData();
-
-  // Extract standard fields name and email
-  const name = formData.get("name") || "Anonymous";
-  const email = formData.get("email") || "no-email@example.com";
-
-  // Pack other custom fields into a JSON string
-  const customData = {};
-  for (const [key, value] of formData.entries()) {
-    if (key !== "name" && key !== "email" && key !== "templateId") {
-      customData[key] = value;
-    }
-  }
-
-  // Create submission record in database
-  await prisma.formSubmission.create({
-    data: {
-      shop,
-      templateId,
-      brand: template.brand,
-      name: String(name),
-      email: String(email),
-      formData: JSON.stringify(customData)
-    }
-  });
-
+export const action = async () => {
   return { success: true };
 };
 

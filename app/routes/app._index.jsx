@@ -1,25 +1,10 @@
 import { useState } from "react";
 import { useLoaderData, Link } from "react-router";
-import { authenticate } from "../shopify.server";
-import prisma from "../db.server";
 import { TEMPLATES } from "../data/templates";
 import "../styles/dashboard.css";
 
-export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
-
-  let subscription = await prisma.shopSubscription.findUnique({
-    where: { shop }
-  });
-
-  if (!subscription) {
-    subscription = await prisma.shopSubscription.create({
-      data: { shop, plan: "FREE" }
-    });
-  }
-
-  return { plan: subscription.plan, shop };
+export const loader = async () => {
+  return { plan: "PREMIUM", shop: "demo.myshopify.com" };
 };
 
 export default function DashboardPage() {

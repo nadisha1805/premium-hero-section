@@ -1,51 +1,14 @@
 import { useLoaderData, useFetcher, Link } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
-import prisma from "../db.server";
 import "../styles/submissions.css";
 
-export const loader = async ({ request }) => {
-  try {
-    const { session } = await authenticate.admin(request);
-    const shop = session.shop;
-
-    const submissions = await prisma.formSubmission.findMany({
-      where: { shop },
-      orderBy: { createdAt: "desc" }
-    });
-
-    return { submissions, shop };
-  } catch (error) {
-    // If authentication fails, return empty submissions without redirecting to login
-    return { submissions: [], shop: null };
-  }
+export const loader = async () => {
+  return { submissions: [], shop: "demo.myshopify.com" };
 };
 
-export const action = async ({ request }) => {
-  try {
-    const { session } = await authenticate.admin(request);
-    const shop = session.shop;
-
-    const formData = await request.formData();
-    const submissionId = formData.get("id");
-    const actionType = formData.get("action");
-
-    if (actionType === "delete" && submissionId) {
-      await prisma.formSubmission.delete({
-        where: {
-          id: submissionId,
-          shop // Ensure security context matches
-        }
-      });
-      return { success: true };
-    }
-
-    return { success: false };
-  } catch (error) {
-    // If authentication fails, don't allow action but don't redirect to login
-    return { success: false, error: "Authentication required for this action" };
-  }
+export const action = async () => {
+  return { success: true };
 };
 
 export default function SubmissionsPage() {

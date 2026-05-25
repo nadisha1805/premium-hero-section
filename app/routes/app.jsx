@@ -1,7 +1,6 @@
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError, Link } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
-import { authenticate } from "../shopify.server";
 
 export const loader = async () => {
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
@@ -14,9 +13,9 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <div style={{ padding: "20px" }}>
         <nav style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-          <a href="/app">Home</a>
-          <a href="/app/submissions">Customer Data</a>
-          <a href="/app/pricing">Subscription Plans</a>
+          <Link to="/app">Home</Link>
+          <Link to="/app/submissions">Customer Data</Link>
+          <Link to="/app/pricing">Subscription Plans</Link>
         </nav>
 
         <Outlet />
