@@ -2,24 +2,23 @@
 
 client_id = "ec26664c8cac085b318bf9a46e237660"
 name = "Premium Hero Section"
-application_url = "https://localhost:53135"
+application_url = "https://premium-hero-section.vercel.app"
 embedded = true
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
 name = "Demo Source Info"
-description = "Tracks products created by the Shopify app template for development"
+description = "Tracks products created by the Shopify app template"
 
   [product.metafields.app.demo_info.access]
   admin = "merchant_read_write"
 
 [metaobjects.app.example]
 name = "Example"
-description = "An example metaobject definition created by this template"
+description = "Example metaobject definition"
 
   [metaobjects.app.example.access]
   admin = "merchant_read_write"
@@ -34,7 +33,11 @@ name = "Description"
 type = "multi_line_text_field"
 
 [auth]
-redirect_urls = [ "https://localhost:53135/api/auth" ]
+redirect_urls = [
+  "https://premium-hero-section.vercel.app/auth/callback",
+  "https://premium-hero-section.vercel.app/auth/shopify/callback",
+  "https://premium-hero-section.vercel.app/api/auth/callback"
+]
 
 [webhooks]
 api_version = "2026-07"
