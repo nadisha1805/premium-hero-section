@@ -27,7 +27,7 @@ export default async function handleRequest(
     // Use a valid frame-ancestor policy instead of invalid X-Frame-Options values
     responseHeaders.set(
       "Content-Security-Policy",
-      "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://localhost:53135; default-src 'self' data: blob: filesystem: 'unsafe-inline' 'unsafe-eval';"
+      "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://localhost:53135; script-src 'self' https://cdn.shopify.com 'unsafe-inline' 'unsafe-eval'; default-src 'self' data: blob: filesystem: 'unsafe-inline' 'unsafe-eval';"
     );
   }
   

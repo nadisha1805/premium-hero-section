@@ -13,7 +13,7 @@ export default function App() {
         />
         <meta
           httpEquiv="Content-Security-Policy"
-          content="frame-ancestors https://admin.shopify.com https://*.myshopify.com https://localhost:53135;"
+          content="frame-ancestors https://admin.shopify.com https://*.myshopify.com https://localhost:53135; script-src 'self' https://cdn.shopify.com 'unsafe-inline' 'unsafe-eval'; default-src 'self' data: blob: filesystem: 'unsafe-inline' 'unsafe-eval';"
         />
         <script dangerouslySetInnerHTML={{__html: `
           (function() {
