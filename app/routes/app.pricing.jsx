@@ -6,38 +6,48 @@ import prisma from "../db.server";
 import "../styles/pricing.css";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
 
-  let subscription = await prisma.shopSubscription.findUnique({
-    where: { shop }
-  });
-
-  if (!subscription) {
-    subscription = await prisma.shopSubscription.create({
-      data: { shop, plan: "FREE" }
+    let subscription = await prisma.shopSubscription.findUnique({
+      where: { shop }
     });
-  }
 
-  return { plan: subscription.plan, shop };
+    if (!subscription) {
+      subscription = await prisma.shopSubscription.create({
+        data: { shop, plan: "FREE" }
+      });
+    }
+
+    return { plan: subscription.plan, shop };
+  } catch (error) {
+    // If authentication fails, return default FREE plan without redirecting to login
+    return { plan: "FREE", shop: null };
+  }
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
-  const formData = await request.formData();
-  const plan = formData.get("plan");
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
+    const formData = await request.formData();
+    const plan = formData.get("plan");
 
-  if (["FREE", "PRO", "PREMIUM"].includes(plan)) {
-    const updated = await prisma.shopSubscription.upsert({
-      where: { shop },
-      update: { plan },
-      create: { shop, plan }
-    });
-    return { success: true, plan: updated.plan };
+    if (["FREE", "PRO", "PREMIUM"].includes(plan)) {
+      const updated = await prisma.shopSubscription.upsert({
+        where: { shop },
+        update: { plan },
+        create: { shop, plan }
+      });
+      return { success: true, plan: updated.plan };
+    }
+
+    return { success: false, error: "Invalid plan type specified" };
+  } catch (error) {
+    // If authentication fails, don't allow plan changes but don't redirect to login
+    return { success: false, error: "Authentication required to change plan" };
   }
-
-  return { success: false, error: "Invalid plan type specified" };
 };
 
 export default function PricingPage() {

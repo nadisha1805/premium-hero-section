@@ -6,36 +6,46 @@ import prisma from "../db.server";
 import "../styles/submissions.css";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
 
-  const submissions = await prisma.formSubmission.findMany({
-    where: { shop },
-    orderBy: { createdAt: "desc" }
-  });
+    const submissions = await prisma.formSubmission.findMany({
+      where: { shop },
+      orderBy: { createdAt: "desc" }
+    });
 
-  return { submissions, shop };
+    return { submissions, shop };
+  } catch (error) {
+    // If authentication fails, return empty submissions without redirecting to login
+    return { submissions: [], shop: null };
+  }
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
 
-  const formData = await request.formData();
-  const submissionId = formData.get("id");
-  const actionType = formData.get("action");
+    const formData = await request.formData();
+    const submissionId = formData.get("id");
+    const actionType = formData.get("action");
 
-  if (actionType === "delete" && submissionId) {
-    await prisma.formSubmission.delete({
-      where: {
-        id: submissionId,
-        shop // Ensure security context matches
-      }
-    });
-    return { success: true };
+    if (actionType === "delete" && submissionId) {
+      await prisma.formSubmission.delete({
+        where: {
+          id: submissionId,
+          shop // Ensure security context matches
+        }
+      });
+      return { success: true };
+    }
+
+    return { success: false };
+  } catch (error) {
+    // If authentication fails, don't allow action but don't redirect to login
+    return { success: false, error: "Authentication required for this action" };
   }
-
-  return { success: false };
 };
 
 export default function SubmissionsPage() {
