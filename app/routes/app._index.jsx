@@ -1,0 +1,194 @@
+import { useState } from "react";
+import { useLoaderData, Link } from "react-router";
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { TEMPLATES } from "../data/templates";
+import "../styles/dashboard.css";
+
+export const loader = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  let subscription = await prisma.shopSubscription.findUnique({
+    where: { shop }
+  });
+
+  if (!subscription) {
+    subscription = await prisma.shopSubscription.create({
+      data: { shop, plan: "FREE" }
+    });
+  }
+
+  return { plan: subscription.plan, shop };
+};
+
+export default function DashboardPage() {
+  const { plan } = useLoaderData();
+  const [selectedBrand, setSelectedBrand] = useState("all");
+
+  const brands = [
+    { id: "all", name: "All Categories" },
+    { id: "fashion", name: "Fashion" },
+    { id: "jewelry", name: "Jewelry" },
+    { id: "tech", name: "Tech" },
+    { id: "skincare", name: "Skincare" },
+    { id: "gym", name: "Gym" },
+    { id: "coffee", name: "Coffee" },
+    { id: "furniture", name: "Furniture" }
+  ];
+
+  // Logic to determine if a template is unlocked based on active subscription
+  const isTemplateUnlocked = (templateTier) => {
+    if (templateTier === "free") return true;
+    if (plan === "PREMIUM") return true;
+    if (plan === "PRO" && templateTier === "pro") return true;
+    return false;
+  };
+
+  const filteredTemplates = selectedBrand === "all"
+    ? TEMPLATES
+    : TEMPLATES.filter(t => t.brand === selectedBrand);
+
+  // eslint-disable-next-line react/prop-types
+  const LockIcon = ({ size = 20 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 11V7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7V11M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
+  const UnlockIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="currentColor" />
+      <path d="M17 11V7C17 4.23858 14.7614 2 12 2C9.6465 2 7.6433 3.6262 7.1245 5.8M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
+  return (
+    <div>
+      <div className="dashboard-container">
+
+        {/* Subscription Info Banner */}
+        <div className="sub-banner">
+          <div className="sub-banner-content">
+            <h2>
+              Active Subscription:
+              <span className={`plan-badge ${plan.toLowerCase()}`}>
+                {plan} Plan
+              </span>
+            </h2>
+            <p>
+              {plan === "FREE" && "Subscribe to Pro or Premium to unlock conversion-focused layouts."}
+              {plan === "PRO" && "Pro level active. All Pro templates are fully unlocked!"}
+              {plan === "PREMIUM" && "Premium level active. You have full unlimited access to every design!"}
+            </p>
+          </div>
+          <div className="sub-banner-action">
+            <Link to="/app/pricing">
+              <button className="btn-upgrade">
+                {plan === "PREMIUM" ? "Manage Subscription" : "Upgrade Plan"}
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Brand Filters */}
+        <div className="category-filters">
+          {brands.map(brand => (
+            <button
+              key={brand.id}
+              className={`category-btn ${selectedBrand === brand.id ? "active" : ""}`}
+              onClick={() => setSelectedBrand(brand.id)}
+            >
+              {brand.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Templates Grid (3 items per row) */}
+        <div className="templates-grid">
+          {filteredTemplates.map(tpl => {
+            const unlocked = isTemplateUnlocked(tpl.tier);
+            return (
+              <div key={tpl.id} className="template-card">
+
+                {/* Visual Preview Box */}
+                <div className={`template-visual-preview tier-${tpl.tier}`}>
+                  {tpl.tier === 'premium' && tpl.video ? (
+                    <video 
+                      className="template-media-bg" 
+                      src={tpl.video} 
+                      poster={tpl.image}
+                      autoPlay 
+                      muted 
+                      loop 
+                      playsInline 
+                    />
+                  ) : (
+                    <img 
+                      className="template-media-bg" 
+                      src={tpl.image} 
+                      alt={tpl.name} 
+                    />
+                  )}
+                  
+                  <div className="template-glass-overlay"></div>
+
+                  {/* Lock/Unlock Badges */}
+                  <span className={`template-badge badge-${tpl.tier}`}>
+                    {tpl.tier}
+                  </span>
+
+                  {/* Lock overlay on hover for locked templates */}
+                  {!unlocked && (
+                    <div className="lock-overlay">
+                      <div className="lock-icon-wrapper">
+                        <LockIcon size={22} />
+                      </div>
+                      <span className="lock-overlay-text">Locked ({tpl.tier})</span>
+                    </div>
+                  )}
+
+                  <div className="template-preview-content">
+                    <div className="template-preview-tagline">
+                      {tpl.tagline}
+                    </div>
+                    <div className="template-preview-sub">
+                      {tpl.name} Form Layout
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Details */}
+                <div className="template-details">
+                  <span className="template-brand-name">{tpl.brand}</span>
+                  <h3 className="template-card-title">
+                    {tpl.name}
+                  </h3>
+                  <p className="template-card-description">{tpl.description}</p>
+
+                  <div className="template-card-footer">
+                    {unlocked ? (
+                      <span className="template-card-unlocked">
+                        <UnlockIcon /> Unlocked
+                      </span>
+                    ) : (
+                      <span className="template-card-locked">
+                        <LockIcon size={14} /> Locked
+                      </span>
+                    )}
+
+                    <Link to={`/app/templates/${tpl.id}`} className="template-action-link">
+                      Preview Design &rarr;
+                    </Link>
+                  </div>
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+    </div>
+  );
+}
