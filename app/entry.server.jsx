@@ -15,9 +15,36 @@ export default async function handleRequest(
 ) {
   addDocumentResponseHeaders(request, responseHeaders);
 
+  // Shopify Embedded App CSP Fix
   responseHeaders.set(
     "Content-Security-Policy",
-    "frame-ancestors https://admin.shopify.com https://*.myshopify.com; script-src 'self' https://cdn.shopify.com https://accounts.shopify.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://cdn.shopify.com data:; media-src 'self' https:; connect-src 'self' https: wss: https://accounts.shopify.com https://*.shopify.com; default-src 'self' data: blob: filesystem: 'unsafe-inline' 'unsafe-eval';"
+    `
+      frame-ancestors https://admin.shopify.com https://*.myshopify.com;
+      default-src 'self' https:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com;
+      style-src 'self' 'unsafe-inline' https:;
+      img-src 'self' data: https:;
+      connect-src 'self' https: wss:;
+      font-src 'self' https: data:;
+    `
+      .replace(/\n/g, " ")
+      .trim(),
+  );
+
+  // Extra headers for embedded Shopify apps
+  responseHeaders.set(
+    "Access-Control-Allow-Origin",
+    "https://admin.shopify.com",
+  );
+
+  responseHeaders.set(
+    "Access-Control-Allow-Credentials",
+    "true",
+  );
+
+  responseHeaders.set(
+    "Access-Control-Allow-Private-Network",
+    "true",
   );
 
   const userAgent = request.headers.get("user-agent");
@@ -41,7 +68,7 @@ export default async function handleRequest(
 
           responseHeaders.set(
             "Content-Type",
-            "text/html"
+            "text/html",
           );
 
           resolve(
