@@ -5,8 +5,20 @@ name = "Premium Hero Section"
 application_url = "https://premium-hero-section.vercel.app"
 embedded = true
 
+[build]
+automatically_update_urls_on_dev = false
+
+[webhooks]
+api_version = "2026-07"
+
 [access_scopes]
-scopes = "write_products,write_metaobjects,write_metaobject_definitions"
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_metaobject_definitions,write_metaobjects,write_products"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ "https://premium-hero-section.vercel.app/auth/callback" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
@@ -31,17 +43,3 @@ required = true
 [metaobjects.app.example.fields.description]
 name = "Description"
 type = "multi_line_text_field"
-
-[auth]
-redirect_urls = [
-  "https://premium-hero-section.vercel.app/auth/callback",
-  "https://premium-hero-section.vercel.app/auth/shopify/callback",
-  "https://premium-hero-section.vercel.app/api/auth/callback"
-]
-
-[webhooks]
-api_version = "2026-07"
-
-[build]
-include_config_on_deploy = true
-automatically_update_urls_on_dev = false
