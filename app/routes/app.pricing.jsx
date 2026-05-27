@@ -9,50 +9,33 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-
-  if (request.method !== "POST") {
-    return { error: "Invalid request method" };
-  }
-
-  const formData = await request.formData();
-  const planName = formData.get("plan");
-
-  const planConfig = {
-    PRO: {
-      name: "Pro Creator Plan",
-      price: 49.0,
-      description: "Unlock all 7 Pro Templates with unlimited submissions and form validation",
-    },
-    PREMIUM: {
-      name: "Elite Premium Plan",
-      price: 99.0,
-      description: "Unlock ALL 14 Templates with advanced customization and priority support",
-    },
-  };
-
-  const plan = planConfig[planName];
-  if (!plan) {
-    return { error: "Invalid plan selected" };
-  }
-
   try {
-    // Create recurring app charge using GraphQL
-    const CREATE_CHARGE = `
-      mutation CreateRecurringApplicationCharge($input: AppRecurringChargeInput!) {
-        appRecurringChargeCreate(input: $input) {
-          appRecurringCharge {
-            id
-            confirmationUrl
-            returnUrl
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
+    const { admin, session } = await authenticate.admin(request);
+
+    if (request.method !== "POST") {
+      return { error: "Invalid request method" };
+    }
+
+    const formData = await request.formData();
+    const planName = formData.get("plan");
+
+    const planConfig = {
+      PRO: {
+        name: "Pro Creator Plan",
+        price: 49.0,
+        description: "Unlock all 7 Pro Templates with unlimited submissions and form validation",
+      },
+      PREMIUM: {
+        name: "Elite Premium Plan",
+        price: 99.0,
+        description: "Unlock ALL 14 Templates with advanced customization and priority support",
+      },
+    };
+
+    const plan = planConfig[planName];
+    if (!plan) {
+      return { error: "Invalid plan selected" };
+    }
 
     const appUrl = process.env.SHOPIFY_APP_URL || process.env.HOST;
     if (!appUrl) {
@@ -62,44 +45,47 @@ export const action = async ({ request }) => {
 
     const returnUrl = `${appUrl}/app/pricing?plan=${planName}`;
 
-    const response = await admin.graphql(CREATE_CHARGE, {
-      variables: {
-        input: {
-          name: plan.name,
-          price: {
-            amount: plan.price,
-            currencyCode: "USD",
-          },
-          returnUrl: returnUrl,
-          test: true,
-        },
+    // Create recurring app charge using REST API
+    const shop = session?.shop;
+    if (!shop) {
+      console.error("No shop found in session");
+      return { error: "Shop not found" };
+    }
+
+    const chargeData = {
+      recurring_application_charge: {
+        name: plan.name,
+        price: plan.price,
+        return_url: returnUrl,
+        test: true,
       },
+    };
+
+    console.log("Creating charge for shop:", shop);
+    console.log("Charge data:", JSON.stringify(chargeData, null, 2));
+
+    const response = await admin.rest.post({
+      path: "/admin/api/2025-01/recurring_application_charges.json",
+      data: chargeData,
     });
 
-    const data = await response.json();
-    
-    if (response.status !== 200) {
-      console.error("GraphQL Error Status:", response.status);
-      return { error: `API Error: ${response.statusText}` };
+    const charge = response.body?.recurring_application_charge;
+
+    if (!charge) {
+      console.error("No charge returned:", response);
+      return { error: "Failed to create charge" };
     }
 
-    const charge = data.data?.appRecurringChargeCreate?.appRecurringCharge;
-    const errors = data.data?.appRecurringChargeCreate?.userErrors;
-
-    if (errors && errors.length > 0) {
-      console.error("Shopify API Errors:", errors);
-      return { error: errors[0]?.message || "Failed to create charge" };
+    if (charge.confirmation_url) {
+      console.log("Redirecting to:", charge.confirmation_url);
+      return redirect(charge.confirmation_url);
     }
 
-    if (charge?.confirmationUrl) {
-      // Redirect to Shopify's confirmation page
-      return redirect(charge.confirmationUrl);
-    }
-
-    console.error("No confirmation URL in response:", data);
-    return { error: "No confirmation URL received from Shopify" };
+    return { error: "No confirmation URL received" };
   } catch (error) {
-    console.error("Subscription error:", error.message, error.stack);
+    console.error("Subscription error:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
     return { error: `Failed to process subscription: ${error.message}` };
   }
 };
