@@ -54,23 +54,9 @@ function getAppUrl() {
   return "";
 }
 
-// Use in-memory storage for development by default
-let sessionStorage = new InMemorySessionStorage();
-
-// Only try Prisma in production
-if (process.env.NODE_ENV === "production") {
-  try {
-    const { PrismaSessionStorage } = await import("@shopify/shopify-app-session-storage-prisma");
-    const { default: prisma } = await import("./db.server");
-    sessionStorage = new PrismaSessionStorage(prisma);
-    console.log("✅ Using Prisma session storage (Production)");
-  } catch (error) {
-    console.warn("⚠️ Prisma failed, using in-memory storage:", error.message);
-    sessionStorage = new InMemorySessionStorage();
-  }
-} else {
-  console.log("✅ Using in-memory session storage (Development)");
-}
+// Use in-memory storage (Prisma would fail to connect in dev anyway)
+const sessionStorage = new InMemorySessionStorage();
+console.log("✅ Using in-memory session storage");
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
