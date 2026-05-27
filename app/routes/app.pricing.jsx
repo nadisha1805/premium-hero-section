@@ -10,7 +10,7 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   try {
-    const { admin, session } = await authenticate.admin(request);
+    const { billing, session } = await authenticate.admin(request);
 
     if (request.method !== "POST") {
       return { error: "Invalid request method" };
@@ -20,20 +20,12 @@ export const action = async ({ request }) => {
     const planName = formData.get("plan");
 
     const planConfig = {
-      PRO: {
-        name: "Pro Creator Plan",
-        price: 49.0,
-        description: "Unlock all 7 Pro Templates with unlimited submissions and form validation",
-      },
-      PREMIUM: {
-        name: "Elite Premium Plan",
-        price: 99.0,
-        description: "Unlock ALL 14 Templates with advanced customization and priority support",
-      },
+      PRO: "Pro Plan",
+      PREMIUM: "Elite Plan",
     };
 
-    const plan = planConfig[planName];
-    if (!plan) {
+    const targetPlan = planConfig[planName];
+    if (!targetPlan) {
       return { error: "Invalid plan selected" };
     }
 
@@ -43,45 +35,18 @@ export const action = async ({ request }) => {
       return { error: "Server configuration error: missing app URL" };
     }
 
-    const returnUrl = `${appUrl}/app/pricing?plan=${planName}`;
+    let returnUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
+    returnUrl = `${returnUrl}/app/pricing?plan=${planName}`;
 
-    // Create recurring app charge using REST API
-    const shop = session?.shop;
-    if (!shop) {
-      console.error("No shop found in session");
-      return { error: "Shop not found" };
-    }
+    console.log("Requesting billing for plan:", targetPlan);
 
-    const chargeData = {
-      recurring_application_charge: {
-        name: plan.name,
-        price: plan.price,
-        return_url: returnUrl,
-        test: true,
-      },
-    };
-
-    console.log("Creating charge for shop:", shop);
-    console.log("Charge data:", JSON.stringify(chargeData, null, 2));
-
-    const response = await admin.rest.post({
-      path: "/admin/api/2025-01/recurring_application_charges.json",
-      data: chargeData,
+    // Request billing charge. This will return a redirect Response to the confirmation URL.
+    return await billing.request({
+      plan: targetPlan,
+      isTest: true,
+      returnUrl: returnUrl,
     });
 
-    const charge = response.body?.recurring_application_charge;
-
-    if (!charge) {
-      console.error("No charge returned:", response);
-      return { error: "Failed to create charge" };
-    }
-
-    if (charge.confirmation_url) {
-      console.log("Redirecting to:", charge.confirmation_url);
-      return redirect(charge.confirmation_url);
-    }
-
-    return { error: "No confirmation URL received" };
   } catch (error) {
     console.error("Subscription error:", error);
     console.error("Error message:", error.message);
