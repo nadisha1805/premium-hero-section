@@ -4,10 +4,8 @@ import {
   AppDistribution,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
-import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
-import prisma from "./db.server";
 
-// In-memory session storage for development fallback
+// In-memory session storage for development
 class InMemorySessionStorage {
   constructor() {
     this.sessions = new Map();
@@ -56,14 +54,22 @@ function getAppUrl() {
   return "";
 }
 
-// Use in-memory storage for development if Prisma fails
-let appSessionStorage;
-try {
-  appSessionStorage = new PrismaSessionStorage(prisma);
-  console.log("Using Prisma session storage");
-} catch (error) {
-  console.warn("Prisma session storage failed, using in-memory storage:", error.message);
-  appSessionStorage = new InMemorySessionStorage();
+// Use in-memory storage for development by default
+let sessionStorage = new InMemorySessionStorage();
+
+// Only try Prisma in production
+if (process.env.NODE_ENV === "production") {
+  try {
+    const { PrismaSessionStorage } = await import("@shopify/shopify-app-session-storage-prisma");
+    const { default: prisma } = await import("./db.server");
+    sessionStorage = new PrismaSessionStorage(prisma);
+    console.log("✅ Using Prisma session storage (Production)");
+  } catch (error) {
+    console.warn("⚠️ Prisma failed, using in-memory storage:", error.message);
+    sessionStorage = new InMemorySessionStorage();
+  }
+} else {
+  console.log("✅ Using in-memory session storage (Development)");
 }
 
 const shopify = shopifyApp({
@@ -73,7 +79,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: getAppUrl(),
   authPathPrefix: "/auth",
-  sessionStorage: appSessionStorage,
+  sessionStorage: sessionStorage,
   distribution: AppDistribution.AppStore,
   future: {
     expiringOfflineAccessTokens: true,
@@ -90,4 +96,4 @@ export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
-export const sessionStorage = shopify.sessionStorage;
+export const appSessionStorage = shopify.sessionStorage;
