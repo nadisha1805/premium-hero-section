@@ -9,7 +9,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin, sessionID } = await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
 
   if (request.method !== "POST") {
     return { error: "Invalid request method" };
@@ -44,7 +44,7 @@ export const action = async ({ request }) => {
           appRecurringCharge {
             id
             confirmationUrl
-            return_url
+            returnUrl
           }
           userErrors {
             field
@@ -54,6 +54,14 @@ export const action = async ({ request }) => {
       }
     `;
 
+    const appUrl = process.env.SHOPIFY_APP_URL || process.env.HOST;
+    if (!appUrl) {
+      console.error("Missing SHOPIFY_APP_URL or HOST environment variable");
+      return { error: "Server configuration error: missing app URL" };
+    }
+
+    const returnUrl = `${appUrl}/app/pricing?plan=${planName}`;
+
     const response = await admin.graphql(CREATE_CHARGE, {
       variables: {
         input: {
@@ -62,33 +70,19 @@ export const action = async ({ request }) => {
             amount: plan.price,
             currencyCode: "USD",
           },
-          lineItems: [
-            {
-              plan: {
-                appUsagePricingDetails: {
-                  cappedAmount: {
-                    amount: plan.price,
-                    currencyCode: "USD",
-                  },
-                },
-              },
-            },
-          ],
-          returnUrl: `${process.env.SHOPIFY_APP_URL}/app/pricing?plan=${planName}`,
+          returnUrl: returnUrl,
           test: true,
-          trialDays: 0,
-          billingLineItems: [
-            {
-              description: plan.description,
-              quantity: 1,
-              amount: plan.price,
-            },
-          ],
         },
       },
     });
 
     const data = await response.json();
+    
+    if (response.status !== 200) {
+      console.error("GraphQL Error Status:", response.status);
+      return { error: `API Error: ${response.statusText}` };
+    }
+
     const charge = data.data?.appRecurringChargeCreate?.appRecurringCharge;
     const errors = data.data?.appRecurringChargeCreate?.userErrors;
 
@@ -102,10 +96,11 @@ export const action = async ({ request }) => {
       return redirect(charge.confirmationUrl);
     }
 
-    return { error: "No confirmation URL received" };
+    console.error("No confirmation URL in response:", data);
+    return { error: "No confirmation URL received from Shopify" };
   } catch (error) {
-    console.error("Subscription error:", error);
-    return { error: "Failed to process subscription" };
+    console.error("Subscription error:", error.message, error.stack);
+    return { error: `Failed to process subscription: ${error.message}` };
   }
 };
 
