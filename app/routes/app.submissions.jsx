@@ -109,11 +109,13 @@ export default function SubmissionsPage() {
                     <td style={{ color: "#64748b", fontSize: "0.85rem" }}>{formatDate(sub.createdAt)}</td>
                     <td style={{ textAlign: "right" }}>
                       <button
-                        onClick={() => handleDelete(sub.id)}
-                        className="btn-delete"
-                      >
-                        Delete
-                      </button>
+                      onClick={() => handleDelete(sub.id)}
+                      className="btn-delete"
+                     disabled={fetcher.state === "submitting"}
+                    >
+                      {fetcher.state === "submitting" ? "Deleting..." : "Delete"}
+                     </button>
+                      
                     </td>
                   </tr>
                 ))}

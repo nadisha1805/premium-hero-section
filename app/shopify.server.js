@@ -68,6 +68,19 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: sessionStorage,
   distribution: AppDistribution.AppStore,
+  billing: {
+  "Pro Plan": {
+    amount: 49,
+    currencyCode: "USD",
+    interval: BillingInterval.Every30Days,
+  },
+
+  "Elite Plan": {
+    amount: 99,
+    currencyCode: "USD",
+    interval: BillingInterval.Every30Days,
+  },
+},
   future: {
     expiringOfflineAccessTokens: true,
   },
@@ -84,16 +97,3 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const appSessionStorage = shopify.sessionStorage;
-export const billing = {
-  "Pro Plan": {
-    amount: 49,
-    currencyCode: "USD",
-    interval: BillingInterval.Every30Days,
-  },
-
-  "Elite Plan": {
-    amount: 99,
-    currencyCode: "USD",
-    interval: BillingInterval.Every30Days,
-  },
-},
