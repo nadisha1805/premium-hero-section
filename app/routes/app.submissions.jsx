@@ -75,9 +75,9 @@ export default function SubmissionsPage() {
             </svg>
             <h3>No Customer Submissions Yet</h3>
             <p>Preview your hero designs, complete the signup forms, and they'll instantly populate here.</p>
-            <Link to="/app" className="btn-preview">
+            <a href="/app" className="btn-preview">
               Browse Design Templates
-            </Link>
+            </a>
           </div>
         ) : (
           <div className="table-wrapper">

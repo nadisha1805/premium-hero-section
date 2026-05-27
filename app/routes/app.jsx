@@ -13,11 +13,10 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <div style={{ padding: "20px" }}>
         <nav style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-          <Link to="/app">Home</Link>
-          <Link to="/app/submissions">Customer Data</Link>
-          <Link to="/app/pricing">Subscription Plans</Link>
+          <a href="/app" style={{ color: "white", textDecoration: "none" }}>Home</a>
+          <a href="/app/submissions" style={{ color: "white", textDecoration: "none" }}>Customer Data</a>
+          <a href="/app/pricing" style={{ color: "white", textDecoration: "none" }}>Subscription Plans</a>
         </nav>
-
         <Outlet />
       </div>
     </AppProvider>

@@ -1,14 +1,113 @@
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, redirect } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { authenticate } from "../shopify.server";
 import "../styles/pricing.css";
 
-export const loader = async () => {
-  return { plan: "PREMIUM", shop: "demo.myshopify.com" };
+export const loader = async ({ request }) => {
+  await authenticate.admin(request);
+  return { plan: "PRO" };
 };
 
-export const action = async () => {
-  return { success: true, plan: "PREMIUM" };
+export const action = async ({ request }) => {
+  const { admin, sessionID } = await authenticate.admin(request);
+
+  if (request.method !== "POST") {
+    return { error: "Invalid request method" };
+  }
+
+  const formData = await request.formData();
+  const planName = formData.get("plan");
+
+  const planConfig = {
+    PRO: {
+      name: "Pro Creator Plan",
+      price: 49.0,
+      description: "Unlock all 7 Pro Templates with unlimited submissions and form validation",
+    },
+    PREMIUM: {
+      name: "Elite Premium Plan",
+      price: 99.0,
+      description: "Unlock ALL 14 Templates with advanced customization and priority support",
+    },
+  };
+
+  const plan = planConfig[planName];
+  if (!plan) {
+    return { error: "Invalid plan selected" };
+  }
+
+  try {
+    // Create recurring app charge using GraphQL
+    const CREATE_CHARGE = `
+      mutation CreateRecurringApplicationCharge($input: AppRecurringChargeInput!) {
+        appRecurringChargeCreate(input: $input) {
+          appRecurringCharge {
+            id
+            confirmationUrl
+            return_url
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const response = await admin.graphql(CREATE_CHARGE, {
+      variables: {
+        input: {
+          name: plan.name,
+          price: {
+            amount: plan.price,
+            currencyCode: "USD",
+          },
+          lineItems: [
+            {
+              plan: {
+                appUsagePricingDetails: {
+                  cappedAmount: {
+                    amount: plan.price,
+                    currencyCode: "USD",
+                  },
+                },
+              },
+            },
+          ],
+          returnUrl: `${process.env.SHOPIFY_APP_URL}/app/pricing?plan=${planName}`,
+          test: true,
+          trialDays: 0,
+          billingLineItems: [
+            {
+              description: plan.description,
+              quantity: 1,
+              amount: plan.price,
+            },
+          ],
+        },
+      },
+    });
+
+    const data = await response.json();
+    const charge = data.data?.appRecurringChargeCreate?.appRecurringCharge;
+    const errors = data.data?.appRecurringChargeCreate?.userErrors;
+
+    if (errors && errors.length > 0) {
+      console.error("Shopify API Errors:", errors);
+      return { error: errors[0]?.message || "Failed to create charge" };
+    }
+
+    if (charge?.confirmationUrl) {
+      // Redirect to Shopify's confirmation page
+      return redirect(charge.confirmationUrl);
+    }
+
+    return { error: "No confirmation URL received" };
+  } catch (error) {
+    console.error("Subscription error:", error);
+    return { error: "Failed to process subscription" };
+  }
 };
 
 export default function PricingPage() {
@@ -17,11 +116,11 @@ export default function PricingPage() {
   const shopify = useAppBridge();
 
   const isSubmitting = fetcher.state !== "idle";
-  const currentPlan = fetcher.data?.success ? fetcher.data.plan : plan;
+  const currentPlan = plan;
 
   useEffect(() => {
-    if (fetcher.data?.success) {
-      shopify.toast.show(`Plan updated to ${fetcher.data.plan}!`);
+    if (fetcher.data?.error) {
+      shopify.toast.show(`Error: ${fetcher.data.error}`, { isError: true });
     }
   }, [fetcher.data, shopify]);
 
@@ -118,6 +217,20 @@ export default function PricingPage() {
               {currentPlan === "PREMIUM" ? "Active" : "Go Elite Premium"}
             </button>
           </div>
+        </div>
+        <div className="pricing-footer">
+          <p>
+            By proceeding with a subscription, you agree to our{" "}
+            <a
+              href="https://www.shopify.com/in/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="terms-link"
+            >
+              Terms of Service
+            </a>
+            . Subject to government tax and other prevailing charges.
+          </p>
         </div>
       </div>
     </div>

@@ -198,3 +198,24 @@
     gap: 3rem;
   }
 }
+
+.pricing-footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.terms-link {
+  color: #008060;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.terms-link:hover {
+  color: #006e52;
+  text-decoration: underline;
+}

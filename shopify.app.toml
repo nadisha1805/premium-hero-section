@@ -2,7 +2,7 @@
 
 client_id = "ec26664c8cac085b318bf9a46e237660"
 name = "Premium Hero Section"
-application_url = "https://premium-hero-section.vercel.app"
+application_url = "https://herosection.unitradein.com"
 embedded = true
 
 [build]
