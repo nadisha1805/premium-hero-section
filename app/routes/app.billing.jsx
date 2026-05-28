@@ -16,6 +16,10 @@ export async function loader({ request }) {
     if (error instanceof Response) {
       throw error;
     }
+    if (error.name === "AbortError" || error.message?.toLowerCase().includes("aborted")) {
+      console.log("Billing request was aborted:", error.message);
+      return new Response("Request aborted", { status: 499 });
+    }
     console.error("Billing Error:", error);
 
     return new Response(

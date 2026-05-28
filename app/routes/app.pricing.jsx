@@ -51,6 +51,10 @@ export const action = async ({ request }) => {
     if (error instanceof Response) {
       throw error;
     }
+    if (error.name === "AbortError" || error.message?.toLowerCase().includes("aborted")) {
+      console.log("Subscription request was aborted:", error.message);
+      return new Response("Request aborted", { status: 499 });
+    }
     console.error("Subscription error:", error);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
