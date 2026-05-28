@@ -93,11 +93,11 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="sub-banner-action">
-            <a href="/app/pricing">
+            <Link to={`/app/pricing${window.location.search}`}>
               <button className="btn-upgrade">
                 {plan === "PREMIUM" ? "Manage Subscription" : "Upgrade Plan"}
               </button>
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -187,9 +187,9 @@ export default function DashboardPage() {
                       </span>
                     )}
 
-                    <a href={`/app/templates/${tpl.id}`} className="template-action-link">
+                    <Link to={`/app/templates/${tpl.id}${window.location.search}`} className="template-action-link">
                       Preview Design &rarr;
-                    </a>
+                    </Link>
                   </div>
                 </div>
 

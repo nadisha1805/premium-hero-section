@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData, useRouteError, Link } from "react-router";
+import { Outlet, useLoaderData, useRouteError, Link, useLocation } from "react-router";
 
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -8,14 +8,15 @@ export const loader = async () => {
 
 export default function App() {
   const { apiKey } = useLoaderData();
+  const location = useLocation();
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       <div style={{ padding: "20px" }}>
         <nav style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-          <Link to="/app" style={{ color: "white", textDecoration: "none" }}>Home</Link>
-          <Link to="/app/submissions" style={{ color: "white", textDecoration: "none" }}>Customer Data</Link>
-          <Link to="/app/pricing" style={{ color: "white", textDecoration: "none" }}>Subscription Plans</Link>
+          <Link to={`/app${location.search}`} style={{ color: "white", textDecoration: "none" }}>Home</Link>
+          <Link to={`/app/submissions${location.search}`} style={{ color: "white", textDecoration: "none" }}>Customer Data</Link>
+          <Link to={`/app/pricing${location.search}`} style={{ color: "white", textDecoration: "none" }}>Subscription Plans</Link>
         </nav>
         <Outlet />
       </div>

@@ -117,7 +117,7 @@ export default function TemplateDetailPage() {
         fontFamily: "'Plus Jakarta Sans', sans-serif"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <Link to="/app" style={{
+          <Link to={`/app${window.location.search}`} style={{
             color: "#64748b",
             textDecoration: "none",
             fontSize: "0.9rem",
@@ -172,7 +172,7 @@ export default function TemplateDetailPage() {
               }}>
                 <LockIcon /> Locked for storefront installation
               </div>
-              <Link to="/app/pricing">
+              <Link to={`/app/pricing${window.location.search}`}>
                 <button style={{
                   background: "#a855f7",
                   color: "white",
