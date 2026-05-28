@@ -1,4 +1,4 @@
-import { useLoaderData, useFetcher, Link } from "react-router";
+import { useLoaderData, useFetcher, Link, useLocation } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import "../styles/submissions.css";
@@ -38,6 +38,7 @@ export default function SubmissionsPage() {
   const { submissions } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
+  const location = useLocation();
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -98,9 +99,9 @@ export default function SubmissionsPage() {
             </svg>
             <h3>No Customer Submissions Yet</h3>
             <p>Preview your hero designs, complete the signup forms, and they'll instantly populate here.</p>
-            <a href="/app" className="btn-preview">
+            <Link to={`/app${location.search}`} className="btn-preview">
               Browse Design Templates
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="table-wrapper">

@@ -1,4 +1,4 @@
-import { useLoaderData, useFetcher, Link } from "react-router";
+import { useLoaderData, useFetcher, Link, useLocation } from "react-router";
 import { useRef, useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATES } from "../data/templates";
@@ -74,6 +74,7 @@ export default function TemplateDetailPage() {
   const { plan, template } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
+  const location = useLocation();
   const formRef = useRef(null);
 
   const isSubmitting = fetcher.state !== "idle";
@@ -117,7 +118,7 @@ export default function TemplateDetailPage() {
         fontFamily: "'Plus Jakarta Sans', sans-serif"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <Link to={`/app${window.location.search}`} style={{
+          <Link to={`/app${location.search}`} style={{
             color: "#64748b",
             textDecoration: "none",
             fontSize: "0.9rem",
@@ -172,7 +173,7 @@ export default function TemplateDetailPage() {
               }}>
                 <LockIcon /> Locked for storefront installation
               </div>
-              <Link to={`/app/pricing${window.location.search}`}>
+              <Link to={`/app/pricing${location.search}`}>
                 <button style={{
                   background: "#a855f7",
                   color: "white",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLoaderData, Link } from "react-router";
+import { useLoaderData, Link, useLocation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATES } from "../data/templates";
 import "../styles/dashboard.css";
@@ -28,11 +28,12 @@ export default function DashboardPage() {
   const { plan, upgraded } = useLoaderData();
   const [selectedBrand, setSelectedBrand] = useState("all");
   const shopify = useAppBridge();
+  const location = useLocation();
 
   useEffect(() => {
     if (upgraded) {
-      const planLabel = plan === "PREMIUM" ? "Elite Premium" : "Pro Creator";
-      shopify.toast.show(`Upgraded to ${planLabel} plan successfully!`);
+      const planLabel = plan === "PREMIUM" ? "Elite" : "Pro";
+      shopify.toast.show(`Upgraded to ${planLabel} successfully!`);
     }
   }, [upgraded, plan, shopify]);
 
@@ -93,7 +94,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="sub-banner-action">
-            <Link to={`/app/pricing${window.location.search}`}>
+            <Link to={`/app/pricing${location.search}`}>
               <button className="btn-upgrade">
                 {plan === "PREMIUM" ? "Manage Subscription" : "Upgrade Plan"}
               </button>
@@ -187,7 +188,7 @@ export default function DashboardPage() {
                       </span>
                     )}
 
-                    <Link to={`/app/templates/${tpl.id}${window.location.search}`} className="template-action-link">
+                    <Link to={`/app/templates/${tpl.id}${location.search}`} className="template-action-link">
                       Preview Design &rarr;
                     </Link>
                   </div>

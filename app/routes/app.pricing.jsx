@@ -20,7 +20,8 @@ export const loader = async ({ request }) => {
       create: { shop, plan: planParam },
     });
 
-    return shopifyRedirect(`/app?upgraded=true`);
+    const host = url.searchParams.get("host") || "";
+    return shopifyRedirect(`/app?upgraded=true&shop=${shop}&host=${encodeURIComponent(host)}`);
   }
 
   const subscription = await prisma.shopSubscription.findUnique({
