@@ -1,15 +1,28 @@
 import { useLoaderData, Link } from "react-router";
 import { TEMPLATES } from "../data/templates";
 import "../styles/premium-templates.css";
+import prisma from "../db.server";
+import { authenticate } from "../shopify.server";
 
-export const loader = async ({ params }) => {
+export const loader = async ({ params, request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const subscription = await prisma.shopSubscription.findUnique({
+    where: { shop },
+  });
+
   const { templateId } = params;
 
   const template = TEMPLATES.find(t => t.id === templateId);
   if (!template) {
     throw new Response("Template Not Found", { status: 404 });
   }
-  return { plan: "FREE", template, shop: "demo.myshopify.com" };
+  return { 
+    plan: subscription ? subscription.plan : "FREE", 
+    template, 
+    shop 
+  };
 };
 
 export const action = async () => {

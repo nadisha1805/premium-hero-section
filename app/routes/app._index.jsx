@@ -1,15 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLoaderData, Link } from "react-router";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATES } from "../data/templates";
 import "../styles/dashboard.css";
+import prisma from "../db.server";
+import { authenticate } from "../shopify.server";
 
-export const loader = async () => {
-  return { plan: "FREE", shop: "demo.myshopify.com" };
+export const loader = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const subscription = await prisma.shopSubscription.findUnique({
+    where: { shop },
+  });
+
+  const url = new URL(request.url);
+  const upgraded = url.searchParams.get("upgraded") === "true";
+
+  return {
+    plan: subscription ? subscription.plan : "FREE",
+    shop,
+    upgraded,
+  };
 };
 
 export default function DashboardPage() {
-  const { plan } = useLoaderData();
+  const { plan, upgraded } = useLoaderData();
   const [selectedBrand, setSelectedBrand] = useState("all");
+  const shopify = useAppBridge();
+
+  useEffect(() => {
+    if (upgraded) {
+      const planLabel = plan === "PREMIUM" ? "Elite Premium" : "Pro Creator";
+      shopify.toast.show(`Upgraded to ${planLabel} plan successfully!`);
+    }
+  }, [upgraded, plan, shopify]);
 
   const brands = [
     { id: "all", name: "All Categories" },

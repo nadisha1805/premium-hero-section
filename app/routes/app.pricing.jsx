@@ -3,9 +3,31 @@ import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import "../styles/pricing.css";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
-  return { plan: "FREE" };
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const url = new URL(request.url);
+  const planParam = url.searchParams.get("plan");
+  const chargeId = url.searchParams.get("charge_id");
+
+  if (planParam && chargeId) {
+    await prisma.shopSubscription.upsert({
+      where: { shop },
+      update: { plan: planParam },
+      create: { shop, plan: planParam },
+    });
+
+    return redirect(`/app?upgraded=true`);
+  }
+
+  const subscription = await prisma.shopSubscription.findUnique({
+    where: { shop },
+  });
+
+  return { plan: subscription ? subscription.plan : "FREE" };
 };
 
 export const action = async ({ request }) => {
