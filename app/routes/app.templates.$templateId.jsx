@@ -1,4 +1,6 @@
-import { useLoaderData, Link } from "react-router";
+import { useLoaderData, useFetcher, Link } from "react-router";
+import { useRef, useEffect } from "react";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATES } from "../data/templates";
 import "../styles/premium-templates.css";
 import prisma from "../db.server";
@@ -25,29 +27,68 @@ export const loader = async ({ params, request }) => {
   };
 };
 
-export const action = async () => {
+export const action = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const formData = await request.formData();
+  const templateId = formData.get("templateId");
+
+  const template = TEMPLATES.find(t => t.id === templateId);
+  if (!template) {
+    return { error: "Template not found" };
+  }
+
+  // Extract name, email and other fields
+  const submissionData = {};
+  let name = "Anonymous User";
+  let email = "no-email@example.com";
+
+  for (const [key, value] of formData.entries()) {
+    if (key === "templateId") continue;
+    
+    if (key.toLowerCase().includes("name")) {
+      name = value.toString();
+    } else if (key.toLowerCase().includes("email")) {
+      email = value.toString();
+    } else {
+      submissionData[key] = value.toString();
+    }
+  }
+
+  await prisma.formSubmission.create({
+    data: {
+      shop,
+      templateId,
+      brand: template.brand,
+      name,
+      email,
+      formData: JSON.stringify(submissionData),
+    },
+  });
+
   return { success: true };
 };
 
 export default function TemplateDetailPage() {
   const { plan, template } = useLoaderData();
-  /*const fetcher = useFetcher();
+  const fetcher = useFetcher();
   const shopify = useAppBridge();
   const formRef = useRef(null);
 
-  const isSubmitting = fetcher.state !== "idle";*/
+  const isSubmitting = fetcher.state !== "idle";
 
   // Check if this template is unlocked under current plan
   const unlocked = plan === "PREMIUM" || (plan === "PRO" && template.tier === "pro");
 
-  /*useEffect(() => {
+  useEffect(() => {
     if (fetcher.data?.success) {
       shopify.toast.show("Lead submitted! Stored in Customer Data.");
       if (formRef.current) {
         formRef.current.reset();
       }
     }
-  }, [fetcher.data, shopify]);*/
+  }, [fetcher.data, shopify]);
 
   const LockIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -56,7 +97,6 @@ export default function TemplateDetailPage() {
   );
 
   // Return appropriate layout structure based on style definitions
-  // To keep it simple, tech-pro and fashion-pro use side-by-side, tech-premium is fullbg glass, others are centered
   const getLayoutClass = (id) => {
     if (["fashion-pro", "jewelry-pro", "tech-pro", "gym-pro", "furniture-pro", "coffee-pro"].includes(id)) {
       return "hero-layout-split";
@@ -192,7 +232,7 @@ export default function TemplateDetailPage() {
           </div>
 
           {/* Interactive Form Component Block */}
-          {/*<div className="hero-form-container">
+          <div className="hero-form-container">
             <h3 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "1.5rem", letterSpacing: "-0.01em" }}>
               Sign Up
             </h3>
@@ -226,7 +266,7 @@ export default function TemplateDetailPage() {
               <button
                 type="submit"
                 className="hero-form-submit-btn"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !unlocked}
                 style={unlocked ? {} : { opacity: 0.7, cursor: "not-allowed" }}
               >
                 {isSubmitting ? "Saving..." : template.buttonText}
@@ -239,7 +279,6 @@ export default function TemplateDetailPage() {
               )}
             </fetcher.Form>
           </div>
-          */}
         </div>
       </div>
     </div>

@@ -2,13 +2,36 @@ import { useLoaderData, useFetcher, Link } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import "../styles/submissions.css";
+import prisma from "../db.server";
+import { authenticate } from "../shopify.server";
 
-export const loader = async () => {
-  return { submissions: [], shop: "demo.myshopify.com" };
+export const loader = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  const submissions = await prisma.formSubmission.findMany({
+    where: { shop },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return { submissions, shop };
 };
 
-export const action = async () => {
-  return { success: true };
+export const action = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  
+  const formData = await request.formData();
+  const actionType = formData.get("action");
+  const submissionId = formData.get("id");
+
+  if (actionType === "delete" && submissionId) {
+    await prisma.formSubmission.delete({
+      where: { id: submissionId },
+    });
+    return { success: true };
+  }
+
+  return { success: false };
 };
 
 export default function SubmissionsPage() {
