@@ -49,6 +49,13 @@ export const action = async ({ request }) => {
 
   } catch (error) {
     if (error instanceof Response) {
+      const reauthUrl = error.headers.get("X-Shopify-API-Request-Failure-Reauthorize-Url");
+      const locationUrl = error.headers.get("Location");
+      const redirectUrl = locationUrl || reauthUrl;
+
+      if (redirectUrl) {
+        return { redirectUrl };
+      }
       throw error;
     }
     if (error.name === "AbortError" || error.message?.toLowerCase().includes("aborted")) {
@@ -73,6 +80,9 @@ export default function PricingPage() {
   useEffect(() => {
     if (fetcher.data?.error) {
       shopify.toast.show(`Error: ${fetcher.data.error}`, { isError: true });
+    }
+    if (fetcher.data?.redirectUrl) {
+      window.top.location.href = fetcher.data.redirectUrl;
     }
   }, [fetcher.data, shopify]);
 
