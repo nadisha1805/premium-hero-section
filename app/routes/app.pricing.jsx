@@ -5,7 +5,7 @@ import { authenticate } from "../shopify.server";
 import "../styles/pricing.css";
 
 export const loader = async ({ request }) => {
-  return { plan: "PRO" };
+  return { plan: "FREE" };
 };
 
 export const action = async ({ request }) => {

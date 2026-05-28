@@ -4,7 +4,7 @@ import { TEMPLATES } from "../data/templates";
 import "../styles/dashboard.css";
 
 export const loader = async () => {
-  return { plan: "PREMIUM", shop: "demo.myshopify.com" };
+  return { plan: "FREE", shop: "demo.myshopify.com" };
 };
 
 export default function DashboardPage() {

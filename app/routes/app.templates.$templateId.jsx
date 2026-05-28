@@ -9,7 +9,7 @@ export const loader = async ({ params }) => {
   if (!template) {
     throw new Response("Template Not Found", { status: 404 });
   }
-  return { plan: "PREMIUM", template, shop: "demo.myshopify.com" };
+  return { plan: "FREE", template, shop: "demo.myshopify.com" };
 };
 
 export const action = async () => {
