@@ -13,6 +13,9 @@ export async function loader({ request }) {
 
     return redirect(confirmation.confirmationUrl);
   } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
     console.error("Billing Error:", error);
 
     return new Response(

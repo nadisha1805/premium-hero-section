@@ -48,6 +48,9 @@ export const action = async ({ request }) => {
     });
 
   } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
     console.error("Subscription error:", error);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
