@@ -6,7 +6,7 @@ import "../styles/pricing.css";
 import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, redirect: shopifyRedirect } = await authenticate.admin(request);
   const shop = session.shop;
 
   const url = new URL(request.url);
@@ -20,7 +20,7 @@ export const loader = async ({ request }) => {
       create: { shop, plan: planParam },
     });
 
-    return redirect(`/app?upgraded=true`);
+    return shopifyRedirect(`/app?upgraded=true`);
   }
 
   const subscription = await prisma.shopSubscription.findUnique({
