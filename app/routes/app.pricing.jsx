@@ -57,8 +57,12 @@ export const action = async ({ request }) => {
       return { error: "Server configuration error: missing app URL" };
     }
 
+    const url = new URL(request.url);
+    const shop = url.searchParams.get("shop") || session.shop;
+    const host = url.searchParams.get("host") || "";
+
     let returnUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
-    returnUrl = `${returnUrl}/app/pricing?plan=${planName}`;
+    returnUrl = `${returnUrl}/app/pricing?plan=${planName}&shop=${shop}&host=${encodeURIComponent(host)}`;
 
     console.log("Requesting billing for plan:", targetPlan);
 
