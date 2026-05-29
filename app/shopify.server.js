@@ -14,6 +14,10 @@ import prisma from "./db.server";
 
 // Get correct app URL
 function getAppUrl() {
+  if (process.env.NODE_ENV === "development" && process.env.HOST) {
+    return process.env.HOST.replace(/\/$/, "");
+  }
+
   const configuredUrl = process.env.SHOPIFY_APP_URL?.trim();
 
   if (configuredUrl) {

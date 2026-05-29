@@ -115,8 +115,22 @@ export const action = async ({ request }) => {
 
     let appUrl = process.env.SHOPIFY_APP_URL || process.env.HOST;
     const hostHeader = request.headers.get("host");
-    if (hostHeader && (hostHeader.includes("localhost") || hostHeader.includes("trycloudflare.com") || hostHeader.includes("ngrok") || hostHeader.includes("portainer"))) {
-      appUrl = `https://${hostHeader}`;
+
+    if (process.env.NODE_ENV === "development") {
+      appUrl = process.env.HOST || hostHeader || appUrl;
+    } else if (hostHeader && (
+      hostHeader.includes("localhost") || 
+      hostHeader.includes("trycloudflare.com") || 
+      hostHeader.includes("ngrok") || 
+      hostHeader.includes("portainer") ||
+      hostHeader.includes("tunnelmole.net") ||
+      hostHeader.includes("loca.lt")
+    )) {
+      appUrl = hostHeader;
+    }
+
+    if (appUrl && !appUrl.startsWith("http")) {
+      appUrl = `https://${appUrl}`;
     }
 
     if (!appUrl) {
