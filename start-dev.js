@@ -2,18 +2,19 @@
 import { spawn } from "child_process";
 import http from "http";
 
-const port = 8081;
+const port = 443;
+const host = "::1"; // Bind to IPv6 loopback to allow port 443 without admin rights on Windows
 
-console.log("🚀 Initializing Tunnelmole secure tunnel...");
+console.log("🚀 Initializing Tunnelmole secure tunnel on port 443...");
 
-// 1. Create a dummy HTTP server on the target port
+// 1. Create a dummy HTTP server on the target port and loopback host
 const dummyServer = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("Dummy Server");
 });
 
-dummyServer.listen(port, () => {
-  console.log(`[system] Temporary dummy server listening on port ${port} to initialize tunnel...`);
+dummyServer.listen(port, host, () => {
+  console.log(`[system] Temporary dummy server listening on [${host}]:${port} to initialize tunnel...`);
 
   // 2. Start tunnelmole using npx
   const tmoleProcess = spawn("npx", ["tunnelmole", port.toString()], {
@@ -38,8 +39,8 @@ dummyServer.listen(port, () => {
       dummyServer.close(() => {
         console.log("[system] Dummy server shut down. Starting Shopify CLI dev server...");
 
-        // 4. Start Shopify CLI dev using the captured Tunnelmole URL
-        shopifyProcess = spawn("npx", ["shopify", "app", "dev", "--localhost-port", port.toString(), "--tunnel-url", `${tunnelUrl}:443`], {
+        // 4. Start Shopify CLI dev using the captured Tunnelmole URL (ends with :443 as required)
+        shopifyProcess = spawn("npx", ["shopify", "app", "dev", "--tunnel-url", `${tunnelUrl}:443`], {
           shell: true,
           stdio: "inherit"
         });
