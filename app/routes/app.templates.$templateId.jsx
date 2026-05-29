@@ -1,6 +1,4 @@
-import { useLoaderData, useFetcher, Link, useLocation } from "react-router";
-import { useRef, useEffect } from "react";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import { useLoaderData, Link, useLocation } from "react-router";
 import { TEMPLATES } from "../data/templates";
 import "../styles/premium-templates.css";
 import prisma from "../db.server";
@@ -93,38 +91,16 @@ export const action = async ({ request }) => {
 
 export default function TemplateDetailPage() {
   const { plan, template } = useLoaderData();
-  const fetcher = useFetcher();
-  const shopify = useAppBridge();
   const location = useLocation();
-  const formRef = useRef(null);
-
-  const isSubmitting = fetcher.state !== "idle";
 
   // Check if this template is unlocked under current plan
   const unlocked = plan === "PREMIUM" || (plan === "PRO" && template.tier === "pro");
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      shopify.toast.show("Lead submitted! Stored in Customer Data.");
-      if (formRef.current) {
-        formRef.current.reset();
-      }
-    }
-  }, [fetcher.data, shopify]);
 
   const LockIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M17 11V7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7V11M5 11H19C20.1046 11 21 11.8954 21 13V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V13C3 11.8954 3.89543 11 5 11Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-
-  // Return appropriate layout structure based on style definitions
-  const getLayoutClass = (id) => {
-    if (["fashion-pro", "jewelry-pro", "tech-pro", "gym-pro", "furniture-pro", "coffee-pro"].includes(id)) {
-      return "hero-layout-split";
-    }
-    return "hero-layout-centered";
-  };
 
   return (
     <div>
@@ -238,68 +214,19 @@ export default function TemplateDetailPage() {
         {/* Cinematic Overlays */}
         <div className={`hero-media-overlay overlay-${template.tier}`}></div>
 
-        <div className={`hero-layout-content ${getLayoutClass(template.id)}`}>
-          {/* Hero Left Content Text Block */}
-          <div style={{ maxWidth: "600px", position: "relative", zIndex: 10 }}>
+        <div className="hero-layout-content hero-layout-centered">
+          {/* Hero Centered Content Text Block */}
+          <div style={{ maxWidth: "800px", position: "relative", zIndex: 10 }}>
             <h1 className="hero-tagline">{template.tagline}</h1>
             <p className="hero-description">{template.description}</p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "2rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "2rem", alignItems: "center" }}>
               {template.features.map((feat, idx) => (
-                <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", opacity: 0.8 }}>
-                  <span style={{ color: template.accentColor }}>&bull;</span> {feat}
+                <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", opacity: 0.9 }}>
+                  <span style={{ color: template.accentColor, fontSize: "1.5rem" }}>&bull;</span> {feat}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Interactive Form Component Block */}
-          <div className="hero-form-container">
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "1.5rem", letterSpacing: "-0.01em" }}>
-              Sign Up
-            </h3>
-
-            <fetcher.Form ref={formRef} method="POST" className="hero-form">
-              <input type="hidden" name="templateId" value={template.id} />
-              
-              {template.fields.map((field) => (
-                <div key={field.name} className="hero-form-group">
-                  <label htmlFor={field.name}>{field.label}</label>
-                  
-                  {field.type === "select" ? (
-                    <select id={field.name} name={field.name} required={field.required}>
-                      <option value="">Choose preference...</option>
-                      {field.options.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id={field.name}
-                      type={field.type}
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                    />
-                  )}
-                </div>
-              ))}
-
-              <button
-                type="submit"
-                className="hero-form-submit-btn"
-                disabled={isSubmitting || !unlocked}
-                style={unlocked ? {} : { opacity: 0.7, cursor: "not-allowed" }}
-              >
-                {isSubmitting ? "Saving..." : template.buttonText}
-              </button>
-              
-              {!unlocked && (
-                <div style={{ fontSize: "0.75rem", textAlign: "center", color: "#ef4444", marginTop: "0.5rem" }}>
-                  * Previewing in demo mode. Upgrade to submit data live.
-                </div>
-              )}
-            </fetcher.Form>
           </div>
         </div>
       </div>
