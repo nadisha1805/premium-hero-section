@@ -1,4 +1,4 @@
-import { redirect, Form, useLoaderData } from "react-router";
+import { redirect, Form, useLoaderData, Link } from "react-router";
 import { login } from "../../shopify.server";
 import { LayoutTemplate, Zap, Smartphone, Sparkles } from "lucide-react";
 
@@ -124,8 +124,11 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 py-8 text-center text-gray-500 text-sm bg-black">
+      <footer className="relative z-10 border-t border-white/10 py-8 text-center text-gray-500 text-sm bg-black flex flex-col sm:flex-row items-center justify-center gap-4">
         <p>&copy; {new Date().getFullYear()} PremiumHero. Built for Shopify.</p>
+        <div className="flex gap-4">
+          <Link to="/privacy" className="hover:text-white transition duration-300">Privacy Policy</Link>
+        </div>
       </footer>
     </div>
   );
