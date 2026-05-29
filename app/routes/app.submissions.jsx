@@ -18,7 +18,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  await authenticate.admin(request);
   
   const formData = await request.formData();
   const actionType = formData.get("action");
@@ -98,7 +98,7 @@ export default function SubmissionsPage() {
               <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <h3>No Customer Submissions Yet</h3>
-            <p>Preview your hero designs, complete the signup forms, and they'll instantly populate here.</p>
+            <p>{"Preview your hero designs, complete the signup forms, and they'll instantly populate here."}</p>
             <Link to={`/app${location.search}`} className="btn-preview">
               Browse Design Templates
             </Link>

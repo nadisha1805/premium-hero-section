@@ -55,9 +55,10 @@ export default function App() {
             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
             <Form className="relative glass-card rounded-2xl p-6 flex flex-col gap-4 text-left" method="post" action="/auth/login">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Shop domain</label>
+                <label htmlFor="shop-domain" className="block text-sm font-medium text-gray-300 mb-2">Shop domain</label>
                 <div className="relative">
                   <input 
+                    id="shop-domain"
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all" 
                     type="text" 
                     name="shop" 

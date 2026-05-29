@@ -1,4 +1,5 @@
-import { useLoaderData, useFetcher, redirect, useLocation } from "react-router";
+/* global process */
+import { useLoaderData, useFetcher } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -165,7 +166,6 @@ export default function PricingPage() {
   const { plan } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
-  const location = useLocation();
 
   const isSubmitting = fetcher.state !== "idle";
   const currentPlan = plan;

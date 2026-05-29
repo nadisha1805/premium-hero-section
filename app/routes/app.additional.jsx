@@ -9,6 +9,7 @@ export default function AdditionalPage() {
           <a
             href="https://shopify.dev/docs/apps/tools/app-bridge"
             target="_blank"
+            rel="noopener noreferrer"
           >
             App Bridge
           </a>

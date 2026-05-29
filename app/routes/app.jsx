@@ -1,4 +1,5 @@
-import { Outlet, useLoaderData, useRouteError, Link, useLocation } from "react-router";
+/* global process */
+import { Outlet, useLoaderData, Link, useLocation } from "react-router";
 
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
