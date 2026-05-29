@@ -1,4 +1,4 @@
-import { useLoaderData, useFetcher, redirect } from "react-router";
+import { useLoaderData, useFetcher, redirect, useLocation } from "react-router";
 import { useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
