@@ -15,11 +15,19 @@ export default async function handleRequest(
 ) {
   addDocumentResponseHeaders(request, responseHeaders);
 
-  // Shopify Embedded App CSP Fix
+  // Extract dynamic frame-ancestors set by Shopify, fallback if not found
+  const shopifyCsp = responseHeaders.get("Content-Security-Policy") || "";
+  let frameAncestors = "frame-ancestors https://admin.shopify.com https://*.myshopify.com";
+  const match = shopifyCsp.match(/frame-ancestors\s+[^;]+/);
+  if (match) {
+    frameAncestors = match[0];
+  }
+
+  // Shopify Embedded App CSP Fix with dynamic frame-ancestors
   responseHeaders.set(
     "Content-Security-Policy",
     `
-      frame-ancestors https://admin.shopify.com https://*.myshopify.com;
+      ${frameAncestors};
       default-src 'self' https:;
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com;
       style-src 'self' 'unsafe-inline' https:;
@@ -27,7 +35,7 @@ export default async function handleRequest(
       connect-src 'self' https: wss:;
       font-src 'self' https: data:;
     `
-      .replace(/\n/g, " ")
+      .replace(/\s+/g, " ")
       .trim(),
   );
 
