@@ -55,7 +55,7 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   try {
-    const { billing, session } = await authenticate.admin(request);
+    const { billing, session, redirect: shopifyRedirect } = await authenticate.admin(request);
 
     if (request.method !== "POST") {
       return { error: "Invalid request method" };
@@ -63,6 +63,44 @@ export const action = async ({ request }) => {
 
     const formData = await request.formData();
     const planName = formData.get("plan");
+
+    if (planName === "FREE") {
+      const url = new URL(request.url);
+      const shop = url.searchParams.get("shop") || session.shop;
+      const host = url.searchParams.get("host") || "";
+
+      // 1. Query Shopify Billing API to check active subscriptions
+      const billingCheck = await billing.check({
+        plans: ["Pro Plan", "Elite Plan"],
+        isTest: true,
+      });
+
+      // 2. Cancel active subscriptions on Shopify if any
+      if (billingCheck.hasActivePayment && billingCheck.appSubscriptions.length > 0) {
+        for (const sub of billingCheck.appSubscriptions) {
+          if (sub.status === "ACTIVE") {
+            try {
+              await billing.cancel({
+                subscriptionId: sub.id,
+                isTest: true,
+                prorate: true,
+              });
+            } catch (err) {
+              console.error("Error cancelling subscription:", err);
+            }
+          }
+        }
+      }
+
+      // 3. Update DB to FREE
+      await prisma.shopSubscription.upsert({
+        where: { shop },
+        update: { plan: "FREE" },
+        create: { shop, plan: "FREE" },
+      });
+
+      return shopifyRedirect(`/app?shop=${shop}&host=${encodeURIComponent(host)}`);
+    }
 
     const planConfig = {
       PRO: "Pro Plan",
@@ -127,6 +165,7 @@ export default function PricingPage() {
   const { plan } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
+  const location = useLocation();
 
   const isSubmitting = fetcher.state !== "idle";
   const currentPlan = plan;
@@ -160,6 +199,55 @@ export default function PricingPage() {
           <p>{"Gain instant access to our curated designer forms. Create beautiful hero grids that elevate your store's conversions."}</p>
         </div>
         <div className="pricing-grid">
+
+          {/* FREE PLAN */}
+          <div className={`pricing-card ${currentPlan === "FREE" ? "active-plan" : ""}`}>
+            {currentPlan === "FREE" && <div className="active-badge">Current Plan</div>}
+            <div className="pricing-card-header">
+              <h2 className="pricing-card-title">FREE STARTER</h2>
+              <div className="pricing-card-price">$0</div>
+              <div className="pricing-card-period">Free Forever</div>
+            </div>
+            <ul className="pricing-features-list">
+              <li className="pricing-feature-item">
+                <CheckIcon />
+                <span>Unlock Free Templates Only</span>
+              </li>
+              <li className="pricing-feature-item">
+                <CheckIcon />
+                <span>Basic Hero Templates</span>
+              </li>
+              <li className="pricing-feature-item">
+                <CheckIcon />
+                <span>Limited Access</span>
+              </li>
+              <li className="pricing-feature-item" style={{ opacity: 0.5 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                <span>Pro Templates Locked</span>
+              </li>
+              <li className="pricing-feature-item" style={{ opacity: 0.5 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                <span>Elite Templates Locked</span>
+              </li>
+              <li className="pricing-feature-item" style={{ opacity: 0.5 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                <span>Premium Features Locked</span>
+              </li>
+            </ul>
+            <button
+              className="pricing-action-btn btn-free"
+              onClick={() => handleSubscribe("FREE")}
+              disabled={isSubmitting || currentPlan === "FREE"}
+            >
+              {currentPlan === "FREE" ? "Active" : "Downgrade to Free"}
+            </button>
+          </div>
 
           {/* PRO PLAN */}
           <div className={`pricing-card ${currentPlan === "PRO" ? "active-plan" : ""}`}>
