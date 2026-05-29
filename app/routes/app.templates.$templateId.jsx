@@ -7,11 +7,32 @@ import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ params, request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const shop = session.shop;
 
-  const subscription = await prisma.shopSubscription.findUnique({
+  // Query Shopify Billing API to check active subscriptions
+  const billingCheck = await billing.check({
+    plans: ["Pro Plan", "Elite Plan"],
+    isTest: true,
+  });
+
+  let activePlan = "FREE";
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions.length > 0) {
+    const activeSub = billingCheck.appSubscriptions.find(sub => sub.status === "ACTIVE");
+    if (activeSub) {
+      if (activeSub.name === "Pro Plan") {
+        activePlan = "PRO";
+      } else if (activeSub.name === "Elite Plan") {
+        activePlan = "PREMIUM";
+      }
+    }
+  }
+
+  // Sync database subscription status
+  const dbSubscription = await prisma.shopSubscription.upsert({
     where: { shop },
+    update: { plan: activePlan },
+    create: { shop, plan: activePlan },
   });
 
   const { templateId } = params;
@@ -21,7 +42,7 @@ export const loader = async ({ params, request }) => {
     throw new Response("Template Not Found", { status: 404 });
   }
   return { 
-    plan: subscription ? subscription.plan : "FREE", 
+    plan: dbSubscription.plan, 
     template, 
     shop 
   };

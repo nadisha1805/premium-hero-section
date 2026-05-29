@@ -6,29 +6,51 @@ import "../styles/pricing.css";
 import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
-  const { session, redirect: shopifyRedirect } = await authenticate.admin(request);
+  const { session, billing, redirect: shopifyRedirect } = await authenticate.admin(request);
   const shop = session.shop;
 
   const url = new URL(request.url);
-  const planParam = url.searchParams.get("plan");
-  const chargeId = url.searchParams.get("charge_id");
 
-  if (planParam && chargeId) {
+  // 1. Get the current plan from DB before updating
+  const subscription = await prisma.shopSubscription.findUnique({
+    where: { shop },
+  });
+  const oldPlan = subscription ? subscription.plan : "FREE";
+
+  // 2. Query Shopify Billing API to check active subscriptions
+  const billingCheck = await billing.check({
+    plans: ["Pro Plan", "Elite Plan"],
+    isTest: true,
+  });
+
+  let activePlan = "FREE";
+  if (billingCheck.hasActivePayment && billingCheck.appSubscriptions.length > 0) {
+    const activeSub = billingCheck.appSubscriptions.find(sub => sub.status === "ACTIVE");
+    if (activeSub) {
+      if (activeSub.name === "Pro Plan") {
+        activePlan = "PRO";
+      } else if (activeSub.name === "Elite Plan") {
+        activePlan = "PREMIUM";
+      }
+    }
+  }
+
+  // 3. Update DB if status changed
+  if (oldPlan !== activePlan) {
     await prisma.shopSubscription.upsert({
       where: { shop },
-      update: { plan: planParam },
-      create: { shop, plan: planParam },
+      update: { plan: activePlan },
+      create: { shop, plan: activePlan },
     });
+  }
 
+  // 4. If they just upgraded (oldPlan was FREE or different, and new activePlan is paid), redirect to dashboard
+  if (oldPlan !== activePlan && activePlan !== "FREE") {
     const host = url.searchParams.get("host") || "";
     return shopifyRedirect(`/app?upgraded=true&shop=${shop}&host=${encodeURIComponent(host)}`);
   }
 
-  const subscription = await prisma.shopSubscription.findUnique({
-    where: { shop },
-  });
-
-  return { plan: subscription ? subscription.plan : "FREE" };
+  return { plan: activePlan };
 };
 
 export const action = async ({ request }) => {
@@ -52,7 +74,12 @@ export const action = async ({ request }) => {
       return { error: "Invalid plan selected" };
     }
 
-    const appUrl = process.env.SHOPIFY_APP_URL || process.env.HOST;
+    let appUrl = process.env.SHOPIFY_APP_URL || process.env.HOST;
+    const hostHeader = request.headers.get("host");
+    if (hostHeader && (hostHeader.includes("localhost") || hostHeader.includes("trycloudflare.com") || hostHeader.includes("ngrok") || hostHeader.includes("portainer"))) {
+      appUrl = `https://${hostHeader}`;
+    }
+
     if (!appUrl) {
       console.error("Missing SHOPIFY_APP_URL or HOST environment variable");
       return { error: "Server configuration error: missing app URL" };
